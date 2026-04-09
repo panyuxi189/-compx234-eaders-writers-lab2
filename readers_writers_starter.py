@@ -53,9 +53,16 @@ class ReadersWritersMonitor:
         3. Increase active_readers.
         4. Print a useful log message.
         """
+        
         with self.condition:
             # TODO: Replace 'pass' with your logic
-            pass
+            # 如果有 writer 正在写，则 reader 需要等待
+            if self.active_writers > 0:
+                print(f"Reader {reader_id} waiting")
+                self.condition.wait()
+            # 开始读
+            self.active_readers += 1
+            print(f"Reader {reader_id} starts reading")
 
     def end_read(self, reader_id: int) -> None:
         """
@@ -68,7 +75,10 @@ class ReadersWritersMonitor:
         """
         with self.condition:
             # TODO: Replace 'pass' with your logic
-            pass
+            # reader 读完，数量减 1
+            self.active_readers -= 1
+            print(f"Reader {reader_id} stops reading")
+            self.condition.notify_all()
 
     def start_write(self, writer_id: int) -> None:
         """
@@ -83,7 +93,16 @@ class ReadersWritersMonitor:
         """
         with self.condition:
             # TODO: Replace 'pass' with your logic
-            pass
+            # writer 开始等待（记录数量）
+            self.waiting_writers += 1
+            # 如果有 reader 或 writer 正在使用资源，则等待
+            if self.active_readers > 0 or self.active_writers > 0:
+                print(f"Writer {writer_id} waiting")
+                self.condition.wait()
+            # 可以开始写了
+            self.waiting_writers -= 1
+            self.active_writers = 1
+            print(f"Writer {writer_id} starts writing")
 
     def end_write(self, writer_id: int) -> None:
         """
@@ -96,7 +115,11 @@ class ReadersWritersMonitor:
         """
         with self.condition:
             # TODO: Replace 'pass' with your logic
-            pass
+            # writer 写完
+            self.active_writers = 0
+            print(f"Writer {writer_id} stops writing")
+            # 唤醒所有等待的线程（reader 和 writer）
+            self.condition.notify_all()
 
 # Donot Change this
 class Reader(threading.Thread):
@@ -156,24 +179,33 @@ def main() -> None:
     monitor = ReadersWritersMonitor()
 
     #TODO: Create at least 3 Reader threads.
+    # 创建 3 个 reader
     readers = [
-        Reader(reader_id=1, monitor=monitor)
+        Reader(reader_id=1, monitor=monitor),
+        Reader(reader_id=2, monitor=monitor),
+        Reader(reader_id=3, monitor=monitor)
     ]
     
     #TODO: Create at least 2 writer threads.
     writers = [
-        Writer(writer_id=1, monitor=monitor)
+        Writer(writer_id=1, monitor=monitor),
+        Writer(writer_id=2, monitor=monitor)
     ]
 
     all_threads = readers + writers
     
     # TODO: Start all threads
-
+    # 启动所有线程
+    for t in all_threads:
+        t.start()
     
     # TODO: Wait for all threads to finish
-
+    # 等待所有线程完成
+    for t in all_threads:
+        t.join()
 
     # TODO: Print final message that simulation completed
+    print("Simulation completed")
 
 
 if __name__ == "__main__":
