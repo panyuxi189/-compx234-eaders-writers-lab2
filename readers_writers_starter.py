@@ -57,7 +57,7 @@ class ReadersWritersMonitor:
         with self.condition:
             # TODO: Replace 'pass' with your logic
             # 如果有 writer 正在写，则 reader 需要等待
-            if self.active_writers > 0:
+            while self.active_writers > 0:
                 print(f"Reader {reader_id} waiting")
                 self.condition.wait()
             # 开始读
@@ -78,7 +78,8 @@ class ReadersWritersMonitor:
             # reader 读完，数量减 1
             self.active_readers -= 1
             print(f"Reader {reader_id} stops reading")
-            self.condition.notify_all()
+            if self.active_readers == 0:
+                self.condition.notify_all()
 
     def start_write(self, writer_id: int) -> None:
         """
@@ -96,7 +97,7 @@ class ReadersWritersMonitor:
             # writer 开始等待（记录数量）
             self.waiting_writers += 1
             # 如果有 reader 或 writer 正在使用资源，则等待
-            if self.active_readers > 0 or self.active_writers > 0:
+            while self.active_readers > 0 or self.active_writers > 0:
                 print(f"Writer {writer_id} waiting")
                 self.condition.wait()
             # 可以开始写了
