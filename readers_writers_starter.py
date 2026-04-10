@@ -35,6 +35,7 @@ class ReadersWritersMonitor:
     """
 
     def __init__(self) -> None:
+        # 锁 + 条件变量
         self.lock = threading.Lock()
         self.condition = threading.Condition(self.lock)
 
@@ -57,7 +58,7 @@ class ReadersWritersMonitor:
         with self.condition:
             # TODO: Replace 'pass' with your logic
             # 如果有 writer 正在写，则 reader 需要等待
-            while self.active_writers > 0:
+            while self.active_writers > 0 or self.waiting_writers > 0:
                 print(f"Reader {reader_id} waiting")
                 self.condition.wait()
             # 开始读
@@ -184,13 +185,13 @@ def main() -> None:
     readers = [
         Reader(reader_id=1, monitor=monitor),
         Reader(reader_id=2, monitor=monitor),
-        Reader(reader_id=3, monitor=monitor)
+        Reader(reader_id=3, monitor=monitor),
     ]
     
     #TODO: Create at least 2 writer threads.
     writers = [
         Writer(writer_id=1, monitor=monitor),
-        Writer(writer_id=2, monitor=monitor)
+        Writer(writer_id=2, monitor=monitor),
     ]
 
     all_threads = readers + writers
